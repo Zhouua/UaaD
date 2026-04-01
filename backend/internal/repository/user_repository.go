@@ -8,7 +8,7 @@ import (
 type UserRepository interface {
 	Create(user *domain.User) error
 	FindByPhone(phone string) (*domain.User, error)
-	FindByID(id uint) (*domain.User, error)
+	FindByID(id uint64) (*domain.User, error)
 }
 
 type userRepository struct {
@@ -31,7 +31,7 @@ func (r *userRepository) FindByPhone(phone string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (r *userRepository) FindByID(id uint) (*domain.User, error) {
+func (r *userRepository) FindByID(id uint64) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err

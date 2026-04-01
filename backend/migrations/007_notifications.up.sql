@@ -1,0 +1,5 @@
+-- Migration: 007_notifications.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- DDL reference: docs/DDL.md §7
+--
+-- type ENUM values: ENROLL_SUCCESS, ENROLL_FAIL, ORDER_EXPIRE, ACTIVITY_REMINDER

@@ -1,0 +1,7 @@
+-- Migration: 002_activities.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- ENUM fields mapped to varchar in GORM for SQLite compatibility.
+-- DDL reference: docs/DDL.md §2
+--
+-- category ENUM values: CONCERT, CONFERENCE, EXPO, ESPORTS, EXHIBITION, OTHER
+-- status ENUM values: DRAFT, PREHEAT, PUBLISHED, SELLING_OUT, SOLD_OUT, OFFLINE, CANCELLED

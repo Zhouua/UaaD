@@ -1,0 +1,4 @@
+-- Migration: 006_activity_scores.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- One row per activity. Updated every 30 minutes (batch) + incrementally on new enrollments.
+-- DDL reference: docs/DDL.md §6

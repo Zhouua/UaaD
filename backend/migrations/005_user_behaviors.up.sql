@@ -1,0 +1,6 @@
+-- Migration: 005_user_behaviors.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- Highest write volume table. Consider monthly partitioning or ClickHouse in production.
+-- DDL reference: docs/DDL.md §5
+--
+-- behavior_type ENUM values: VIEW, COLLECT, SHARE, CLICK, SEARCH

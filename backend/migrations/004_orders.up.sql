@@ -1,0 +1,6 @@
+-- Migration: 004_orders.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- expired_at = created_at + 15 minutes (set by application layer).
+-- DDL reference: docs/DDL.md §4
+--
+-- status ENUM values: PENDING, PAID, CLOSED, REFUNDED

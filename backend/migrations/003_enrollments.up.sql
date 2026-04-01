@@ -1,0 +1,6 @@
+-- Migration: 003_enrollments.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- UNIQUE KEY uk_user_activity (user_id, activity_id) ensures idempotency.
+-- DDL reference: docs/DDL.md §3
+--
+-- status ENUM values: QUEUING, SUCCESS, FAILED, CANCELLED

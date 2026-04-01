@@ -1,0 +1,20 @@
+-- Migration: 001_users.up.sql
+-- Target: MySQL 8.0 (development: GORM AutoMigrate handles SQLite)
+-- Note: SQLite does not support ENUM; GORM uses TEXT for string-based enums.
+-- DDL reference: docs/DDL.md §1
+--
+-- Production MySQL DDL:
+-- CREATE TABLE `users` (
+--   `id`             BIGINT       NOT NULL AUTO_INCREMENT,
+--   `phone`          VARCHAR(20)  NOT NULL,
+--   `username`       VARCHAR(50)  NOT NULL,
+--   `password_hash`  VARCHAR(255) NOT NULL,
+--   `role`           ENUM('USER','MERCHANT','SYS_ADMIN') NOT NULL DEFAULT 'USER',
+--   `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--   `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--   `deleted_at`     DATETIME     DEFAULT NULL,
+--   PRIMARY KEY (`id`),
+--   UNIQUE KEY `uk_phone` (`phone`),
+--   KEY `idx_role` (`role`),
+--   KEY `idx_deleted_at` (`deleted_at`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
