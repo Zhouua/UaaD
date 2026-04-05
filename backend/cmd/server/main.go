@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/uaad/backend/internal/config"
 	"github.com/uaad/backend/internal/domain"
 	"github.com/uaad/backend/internal/handler"
@@ -14,16 +15,17 @@ import (
 	"github.com/uaad/backend/internal/repository"
 	"github.com/uaad/backend/internal/service"
 	"golang.org/x/time/rate"
-	"gorm.io/driver/sqlite"
+	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// ── Configuration ───────────────────────────────────────────────
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load("../.env")
+
 	cfg := config.Load()
 
-	// ── Database ────────────────────────────────────────────────────
-	db, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
+	db, err := gorm.Open(gormmysql.Open(cfg.MySQLDSN()), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
@@ -42,6 +44,9 @@ func main() {
 		&domain.Activity{},
 		&domain.Enrollment{},
 		&domain.Order{},
+		&domain.Notification{},
+		&domain.UserBehavior{},
+		&domain.ActivityScore{},
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
@@ -70,11 +75,11 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		MaxAge:           12 * time.Hour,
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:   []string{"Content-Length"},
+		MaxAge:          12 * time.Hour,
 	}))
 
 	v1 := r.Group("/api/v1")
@@ -91,7 +96,7 @@ func main() {
 			protected.GET("/auth/profile", authHandler.GetCurrentUser)
 		}
 
-		// ── Module Routes ────────────────────────────────────���──
+		// ── Module Routes ───────────────────────────────────────
 		handler.RegisterActivityRoutes(v1, activityHandler, cfg.JWTSecret)
 		handler.RegisterEnrollmentRoutes(v1, enrollmentHandler, cfg.JWTSecret)
 		handler.RegisterOrderRoutes(v1, orderHandler, cfg.JWTSecret)
