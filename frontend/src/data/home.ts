@@ -1,0 +1,73 @@
+import type { HomeBannerItem, SelectedActivityMockItem } from '../types';
+
+export const HOME_BANNERS: HomeBannerItem[] = [
+  {
+    id: 'masters',
+    titleKey: 'home.banners.masters.title',
+    subtitleKey: 'home.banners.masters.subtitle',
+    descriptionKey: 'home.banners.masters.description',
+    ctaLabelKey: 'home.banners.masters.cta',
+    href: '/activities?category=EXHIBITION&keyword=%E8%BE%BE%E8%8A%AC%E5%A5%87',
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=1400&q=80',
+    category: 'EXHIBITION',
+  },
+  {
+    id: 'stadium',
+    titleKey: 'home.banners.stadium.title',
+    subtitleKey: 'home.banners.stadium.subtitle',
+    descriptionKey: 'home.banners.stadium.description',
+    ctaLabelKey: 'home.banners.stadium.cta',
+    href: '/activities?category=CONCERT&sort=hot',
+    imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1400&q=80',
+    category: 'CONCERT',
+  },
+  {
+    id: 'sports',
+    titleKey: 'home.banners.sports.title',
+    subtitleKey: 'home.banners.sports.subtitle',
+    descriptionKey: 'home.banners.sports.description',
+    ctaLabelKey: 'home.banners.sports.cta',
+    href: '/activities?category=SPORTS&sort=soon',
+    imageUrl: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1400&q=80',
+    category: 'SPORTS',
+  },
+];
+
+export const HOME_SELECTED_ACTIVITIES: SelectedActivityMockItem[] = [
+  {
+    id: 'selected-concert',
+    titleKey: 'home.selectedItems.selectedConcert.title',
+    summaryKey: 'home.selectedItems.selectedConcert.summary',
+    imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1400&q=80',
+    locationKey: 'home.selectedItems.selectedConcert.location',
+    openAt: '2026-04-10T12:00:00Z',
+    href: '/activities?category=CONCERT&region=%E5%8C%97%E4%BA%AC&sort=hot',
+    category: 'CONCERT',
+    ctaLabelKey: 'home.selectedItems.selectedConcert.cta',
+    accent: 'rose',
+  },
+  {
+    id: 'selected-sports',
+    titleKey: 'home.selectedItems.selectedSports.title',
+    summaryKey: 'home.selectedItems.selectedSports.summary',
+    imageUrl: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1400&q=80',
+    locationKey: 'home.selectedItems.selectedSports.location',
+    openAt: '2026-04-18T19:30:00Z',
+    href: '/activities?category=SPORTS&region=%E5%B9%BF%E5%B7%9E&sort=hot',
+    category: 'SPORTS',
+    ctaLabelKey: 'home.selectedItems.selectedSports.cta',
+    accent: 'sky',
+  },
+  {
+    id: 'selected-exhibition',
+    titleKey: 'home.selectedItems.selectedExhibition.title',
+    summaryKey: 'home.selectedItems.selectedExhibition.summary',
+    imageUrl: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?auto=format&fit=crop&w=1400&q=80',
+    locationKey: 'home.selectedItems.selectedExhibition.location',
+    openAt: '2026-04-24T10:00:00Z',
+    href: '/activities?category=EXHIBITION&region=%E4%B8%8A%E6%B5%B7&sort=recent',
+    category: 'EXHIBITION',
+    ctaLabelKey: 'home.selectedItems.selectedExhibition.cta',
+    accent: 'orange',
+  },
+];

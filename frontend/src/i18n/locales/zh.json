@@ -3,9 +3,11 @@
     "login": "登录",
     "register": "注册",
     "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
     "phone": "手机号",
     "password": "密码",
     "confirmPassword": "确认密码",
+    "passwordMismatch": "两次输入的密码不一致",
     "signIn": "立即登录",
     "signUp": "立刻注册",
     "noAccount": "还没有账号？",
@@ -18,6 +20,7 @@
     "errorMsg": "登录失败，请检查您的凭据。"
   },
   "dashboard": {
+    "brandTitle": "UAAD 平台",
     "title": "控制盘概览",
     "welcome": "欢迎回到 UAAD 平台",
     "overview": "概览",
@@ -29,9 +32,279 @@
     "activeActivities": "活跃活动",
     "totalRegistrations": "报名总数",
     "successRate": "平均成功率",
+    "liveNow": "实时更新",
+    "hotRanking": "热门热度",
+    "stableOperation": "稳定运行",
     "highlights": "最近活动亮点",
     "comingSoon": "即将开始",
     "slots": "名额",
     "open": "报名开放中"
+  },
+  "public": {
+    "brandTagline": "聚合票务平台",
+    "navHome": "首页",
+    "navCategories": "分类",
+    "searchPlaceholder": "搜索明星、演出、体育赛事",
+    "searchAction": "搜索",
+    "myAccount": "我的账户",
+    "notifications": "消息通知",
+    "viewAll": "查看全部",
+    "emptyTitle": "暂时没有匹配结果",
+    "emptyDescription": "换一个关键词、城市或分类试试看，我们会继续为你聚合更多活动。",
+    "errorTitle": "内容加载失败",
+    "errorDescription": "当前内容暂时不可用，请稍后刷新重试。",
+    "enrolled": "人想看",
+    "priceStarts": "票价",
+    "stockRemaining": "剩余 {{count}} 张",
+    "viewDetails": "查看详情"
+  },
+  "home": {
+    "recommendations": "为您推荐",
+    "sectionEyebrow": "本周热选",
+    "selectedEyebrow": "精选活动",
+    "selectedTitle": "预留 3 个首页精选活动展示位",
+    "selectedDescription": "这 3 个区块先用本地 mock 图片和内容固定下来，严格对齐 Figma 的交错图文结构，后续再切换到真实活动数据源。",
+    "selectedBadge": "首页精选",
+    "banners": {
+      "masters": {
+        "title": "大师典藏",
+        "subtitle": "沉浸式艺术特展与城市美学现场",
+        "description": "从经典名作到数字光影装置，把首屏第一张轮播固定成更贴近 Figma 节奏的展览型主视觉，用于承接首页高品质内容氛围。",
+        "cta": "查看展览"
+      },
+      "stadium": {
+        "title": "万人现场",
+        "subtitle": "热单巡演与夜场灯海一起开场",
+        "description": "用更高对比度的演出场景承接首页第二张轮播，突出热门演唱会与沉浸式舞台体验，强化平台的爆款活动感知。",
+        "cta": "查看演出"
+      },
+      "sports": {
+        "title": "赛场热浪",
+        "subtitle": "焦点赛事与城市主场热力同步升温",
+        "description": "第三张轮播聚焦体育场景，保留强动势画面与明确行动按钮，让首页内容结构在运动类活动上也保持完整统一。",
+        "cta": "查看赛事"
+      }
+    },
+    "mapEyebrow": "活动联动地图",
+    "mapTitle": "全国活动热力图",
+    "mapDrilldownTitle": "{{province}} 城市热力分布",
+    "mapHint": "悬停查看详情，点击省份下钻",
+    "mapBack": "返回全国地图",
+    "mapLoadingProvince": "正在加载 {{province}} 地图...",
+    "mapLegendLow": "热度较低",
+    "mapLegendHigh": "热度较高",
+    "mapError": "地图资源暂时加载失败，请稍后刷新重试。",
+    "mapTooltipCount": "活动数量：{{count}}",
+    "mapTooltipTopActivity": "热门活动：{{title}}",
+    "mapFallbackTopActivity": "热门活动待更新",
+    "spotlightTagline": "精选活动",
+    "spotlightLocation": "活动地点",
+    "spotlightOpenAt": "报名开启",
+    "spotlightCategoryAction": "浏览更多{{category}}",
+    "selectedItems": {
+      "selectedConcert": {
+        "title": "精选活动 01 · 光束降临沉浸演唱现场",
+        "summary": "大型沉浸式舞美与万人合唱声场同步联动，首版先用固定 mock 内容锁定首页精选活动区的结构、图片比例与文案密度。",
+        "location": "北京 · 国家体育馆",
+        "cta": "查看演唱会"
+      },
+      "selectedSports": {
+        "title": "精选活动 02 · 城市冠军之夜主场对决",
+        "summary": "保留 Figma 中图文交错的第二块精选区结构，突出比赛信息、时间和行动按钮，为后续接入真实热门赛事留出稳定卡槽。",
+        "location": "广州 · 天河体育中心",
+        "cta": "查看赛事"
+      },
+      "selectedExhibition": {
+        "title": "精选活动 03 · 城市夜游特展与限定策展单元",
+        "summary": "第三块精选区继续沿用固定 mock 图片与内容，保证首页在真实推荐接口未接入前依旧维持完整视觉框架与浏览节奏。",
+        "location": "上海 · 西岸艺术中心",
+        "cta": "查看展览"
+      }
+    }
+  },
+  "activities": {
+    "totalProducts": "共 {{count}} 个活动",
+    "keywordPlaceholder": "搜索活动名称或关键词",
+    "artistPlaceholder": "搜索艺人 / 主演 / 乐团",
+    "region": "城市",
+    "category": "分类",
+    "youMayAlsoLike": "你可能还喜欢"
+  },
+  "activityDetail": {
+    "invalidId": "活动 ID 无效",
+    "loadError": "活动详情加载失败，请稍后重试。",
+    "notFound": "未找到活动详情，可能已下线或已删除。",
+    "backToList": "返回活动列表",
+    "descriptionTitle": "活动介绍",
+    "ticketPrice": "票价",
+    "stockLabel": "实时库存",
+    "capacityLabel": "总库存 {{count}}",
+    "enrollWindow": "报名时间",
+    "enrolledCount": "已有 {{count}} 人报名",
+    "countdownOpen": "距离开抢",
+    "countdownClose": "距离截止",
+    "countdownClosed": "报名状态",
+    "closed": "报名已结束",
+    "day": "天",
+    "hour": "时",
+    "minute": "分",
+    "second": "秒",
+    "enrollNow": "立即抢票",
+    "enrollUnavailable": "暂不可报名"
+  },
+  "sort": {
+    "relevance": "相关度排序",
+    "hot": "最热门",
+    "soon": "最近开场",
+    "recent": "最新上架"
+  },
+  "cities": {
+    "ALL": "全国",
+    "北京": "北京",
+    "上海": "上海",
+    "广州": "广州",
+    "深圳": "深圳",
+    "杭州": "杭州",
+    "成都": "成都",
+    "武汉": "武汉",
+    "南京": "南京",
+    "西安": "西安"
+  },
+  "categories": {
+    "ALL": "全部",
+    "CONCERT": "演唱会",
+    "THEATER": "话剧歌剧",
+    "SPORTS": "体育",
+    "CHILDREN": "儿童亲子",
+    "EXHIBITION": "展览休闲",
+    "MUSIC": "音乐会",
+    "DANCE": "舞蹈芭蕾",
+    "OTHER": "其他"
+  },
+  "status": {
+    "DRAFT": "待发布",
+    "PREHEAT": "预热中",
+    "PUBLISHED": "售票中",
+    "SELLING_OUT": "即将售罄",
+    "SOLD_OUT": "已售罄",
+    "OFFLINE": "已下线",
+    "CANCELLED": "已取消"
+  },
+  "notifications": {
+    "subtitle": "集中查看报名提醒、支付提醒与活动动态。",
+    "empty": "暂时没有新的通知。"
+  },
+  "common": {
+    "previous": "上一张",
+    "next": "下一张",
+    "previousPage": "上一页",
+    "nextPage": "下一页",
+    "switchToEnglish": "切换到英文",
+    "switchToChinese": "切换到中文"
+  },
+  "regions": {
+    "provinces": {
+      "110000": "北京",
+      "120000": "天津",
+      "130000": "河北",
+      "140000": "山西",
+      "150000": "内蒙古",
+      "210000": "辽宁",
+      "220000": "吉林",
+      "230000": "黑龙江",
+      "310000": "上海",
+      "320000": "江苏",
+      "330000": "浙江",
+      "340000": "安徽",
+      "350000": "福建",
+      "360000": "江西",
+      "370000": "山东",
+      "410000": "河南",
+      "420000": "湖北",
+      "430000": "湖南",
+      "440000": "广东",
+      "450000": "广西",
+      "460000": "海南",
+      "500000": "重庆",
+      "510000": "四川",
+      "520000": "贵州",
+      "530000": "云南",
+      "540000": "西藏",
+      "610000": "陕西",
+      "620000": "甘肃",
+      "630000": "青海",
+      "640000": "宁夏",
+      "650000": "新疆",
+      "710000": "台湾",
+      "810000": "香港",
+      "820000": "澳门"
+    }
+  },
+  "settings": {
+    "currentLang": "系统语言"
+  },
+  "merchant": {
+    "panel": "商家控制台",
+    "backToPublic": "返回公开站",
+    "dashboard": "商家概览",
+    "dashboardSubtitle": "查看活动数据并快速管理上架节奏。",
+    "activityList": "我的活动",
+    "listSubtitle": "管理活动信息、状态和上架操作。",
+    "createActivity": "创建活动",
+    "editActivity": "编辑活动",
+    "createSubtitle": "填写活动信息并保存草稿。",
+    "editSubtitle": "修改活动信息后保存。",
+    "createSubmit": "创建并保存草稿",
+    "editSubmit": "保存修改",
+    "createSuccess": "活动创建成功，已保存为草稿。",
+    "editSuccess": "活动更新成功。",
+    "publish": "上架",
+    "edit": "编辑",
+    "recentActivities": "最近活动",
+    "loading": "加载中...",
+    "empty": "暂无活动，请先创建一个活动。",
+    "stats": {
+      "total": "活动总数",
+      "published": "已上架",
+      "draft": "草稿/预热",
+      "enrollTotal": "累计报名"
+    },
+    "table": {
+      "activity": "活动",
+      "status": "状态",
+      "price": "票价",
+      "enroll": "报名数",
+      "actions": "操作"
+    },
+    "form": {
+      "title": "活动标题",
+      "titlePlaceholder": "请输入活动标题",
+      "description": "活动描述",
+      "descriptionPlaceholder": "请输入活动介绍",
+      "location": "活动地点",
+      "locationPlaceholder": "例如：上海梅赛德斯奔驰文化中心",
+      "category": "活动分类",
+      "capacity": "总库存",
+      "price": "票价（元）",
+      "coverUrl": "封面图 URL",
+      "enrollOpenAt": "报名开始时间",
+      "enrollCloseAt": "报名结束时间",
+      "activityAt": "活动举办时间",
+      "timeInvalid": "时间校验失败：需满足 开始 < 结束 < 举办时间。",
+      "submitFailed": "保存失败，请稍后重试。",
+      "submitting": "提交中..."
+    },
+  "footer": {
+    "brandDescription": "统一聚合演出、赛事、展览与城市活动，帮助用户更快找到下一场值得出发的现场。",
+    "linksTitle": "快速入口",
+    "serviceTitle": "服务说明",
+    "serviceCoverage": "覆盖公开活动发现、搜索、推荐与通知提醒",
+    "serviceHours": "服务时间：09:00 - 21:00",
+    "serviceMail": "服务邮箱：support@uaad.local",
+    "contactTitle": "联系我们",
+    "contactDescription": "如果你希望接入更多票务源、商户活动或协作数据，请通过以下方式联系团队。",
+    "contactMail": "商务合作：business@uaad.local",
+    "contactPhone": "服务热线：400-800-2026"
   }
+}
 }
