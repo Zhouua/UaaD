@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { CalendarDays, Clock3, MapPin, Ticket, Users } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BellRing, CalendarDays, Clock3, Loader2, MapPin, Ticket, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getActivityDetail, getActivityStock } from '../api/endpoints';
+import {
+  createEnrollment,
+  findOrderByOrderNo,
+  getActivityDetail,
+  getActivityStock,
+} from '../api/endpoints';
+import { useAuth } from '../context/AuthContext';
 import type { ActivityDetail } from '../types';
 import { formatCurrency, formatLongDate } from '../utils/formatters';
+import { hasActivityReminder, saveActivityReminder } from '../utils/activityReminderState';
 
 type CountdownState = 'upcoming' | 'selling' | 'closed';
 
@@ -38,6 +45,9 @@ function formatRemain(ms: number) {
 
 export default function ActivityDetailPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, session } = useAuth();
   const { id } = useParams();
   const activityId = Number(id);
   const [activity, setActivity] = useState<ActivityDetail | null>(null);
@@ -45,6 +55,12 @@ export default function ActivityDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReminderSet, setIsReminderSet] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    tone: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!Number.isFinite(activityId)) {
@@ -97,6 +113,10 @@ export default function ActivityDetailPage() {
   }, []);
 
   useEffect(() => {
+    setIsReminderSet(hasActivityReminder(session?.userId, activityId));
+  }, [activityId, session?.userId]);
+
+  useEffect(() => {
     if (!activity) {
       return;
     }
@@ -128,6 +148,8 @@ export default function ActivityDetailPage() {
     return { percent, tone: 'bg-emerald-500', textTone: 'text-emerald-600' };
   }, [activity, stockRemaining]);
 
+  const currentStock = Math.max(0, stockRemaining ?? activity?.stockRemaining ?? 0);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-8">
@@ -154,6 +176,155 @@ export default function ActivityDetailPage() {
 
   const countdown = getCountdownTarget(activity);
   const remain = formatRemain(countdown.target - now);
+  const ctaConfig = (() => {
+    if (activity.status === 'SOLD_OUT' || currentStock <= 0) {
+      return {
+        mode: 'sold_out' as const,
+        label: t('activityDetail.soldOut'),
+        description: t('activityDetail.soldOutHint'),
+        disabled: true,
+        className:
+          'border border-slate-200 bg-slate-100 text-slate-400',
+      };
+    }
+
+    if (activity.status === 'CANCELLED' || activity.status === 'OFFLINE' || countdown.state === 'closed') {
+      return {
+        mode: 'closed' as const,
+        label: t('activityDetail.enrollUnavailable'),
+        description: t('activityDetail.closedHint'),
+        disabled: true,
+        className:
+          'border border-slate-200 bg-slate-100 text-slate-400',
+      };
+    }
+
+    if (activity.status === 'PREHEAT' || countdown.state === 'upcoming') {
+      return {
+        mode: 'remind' as const,
+        label: isReminderSet ? t('activityDetail.reminderSet') : t('activityDetail.remindMe'),
+        description: isReminderSet
+          ? t('activityDetail.reminderSavedHint')
+          : isAuthenticated
+            ? t('activityDetail.reminderHintReady')
+            : t('activityDetail.reminderHint'),
+        disabled: false,
+        className: isReminderSet
+          ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+          : 'bg-slate-900 text-white hover:bg-slate-800',
+      };
+    }
+
+    if (countdown.state === 'selling') {
+      return {
+        mode: 'enroll' as const,
+        label: t('activityDetail.enrollNow'),
+        description: isAuthenticated
+          ? t('activityDetail.paymentHint')
+          : t('activityDetail.loginHint'),
+        disabled: false,
+        className: 'bg-rose-500 text-white hover:bg-rose-600',
+      };
+    }
+
+    return {
+      mode: 'disabled' as const,
+      label: t('activityDetail.enrollUnavailable'),
+      description: t('activityDetail.closedHint'),
+      disabled: true,
+      className: 'border border-slate-200 bg-slate-100 text-slate-400',
+    };
+  })();
+
+  const handleAuthRedirect = () => {
+    navigate('/login', {
+      state: {
+        from: {
+          pathname: location.pathname,
+          search: location.search,
+        },
+      },
+    });
+  };
+
+  const handlePrimaryAction = async () => {
+    setActionFeedback(null);
+
+    if (!isAuthenticated) {
+      handleAuthRedirect();
+      return;
+    }
+
+    if (ctaConfig.mode === 'remind') {
+      const created = saveActivityReminder(session?.userId, {
+        activityId: activity.id,
+        title: activity.title,
+        openAt: activity.enrollOpenAt,
+      });
+
+      setIsReminderSet(true);
+      setActionFeedback({
+        tone: 'success',
+        message: created
+          ? t('activityDetail.reminderSaved', { time: formatLongDate(activity.enrollOpenAt) })
+          : t('activityDetail.reminderExists'),
+      });
+      return;
+    }
+
+    if (ctaConfig.mode !== 'enroll') {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await createEnrollment(activity.id);
+
+      if (result.code === 1101) {
+        setActionFeedback({
+          tone: 'error',
+          message: result.message,
+        });
+
+        const stock = await getActivityStock(activity.id).catch(() => null);
+        if (stock) {
+          setStockRemaining(stock.stockRemaining);
+        }
+        return;
+      }
+
+      if (result.orderNo) {
+        const order = await findOrderByOrderNo(result.orderNo).catch(() => null);
+        if (order) {
+          navigate(`/app/orders/${order.id}`, {
+            state: { activityTitle: activity.title },
+          });
+          return;
+        }
+      }
+
+      if (result.enrollmentId) {
+        navigate(`/app/enroll-status/${result.enrollmentId}`, {
+          state: { activityTitle: activity.title },
+        });
+        return;
+      }
+
+      setActionFeedback({
+        tone: 'success',
+        message: t('activityDetail.enrollSubmitted'),
+      });
+    } catch (err) {
+      const errorWithResponse = err as { response?: { data?: { message?: string } } };
+      setActionFeedback({
+        tone: 'error',
+        message: errorWithResponse.response?.data?.message || t('activityDetail.enrollError'),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
@@ -257,14 +428,37 @@ export default function ActivityDetailPage() {
             )}
           </div>
 
+          {actionFeedback ? (
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm ${
+                actionFeedback.tone === 'success'
+                  ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border border-amber-200 bg-amber-50 text-amber-700'
+              }`}
+            >
+              {actionFeedback.message}
+            </div>
+          ) : null}
+
           <button
             type="button"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={countdown.state !== 'selling'}
+            onClick={() => void handlePrimaryAction()}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${ctaConfig.className}`}
+            disabled={ctaConfig.disabled || isSubmitting}
           >
-            <Ticket size={16} />
-            {countdown.state === 'selling' ? t('activityDetail.enrollNow') : t('activityDetail.enrollUnavailable')}
+            {isSubmitting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : ctaConfig.mode === 'remind' ? (
+              <BellRing size={16} />
+            ) : (
+              <Ticket size={16} />
+            )}
+            {isSubmitting ? t('activityDetail.processing') : ctaConfig.label}
           </button>
+
+          <div className="rounded-2xl bg-[#fffaf7] px-4 py-4 text-sm leading-7 text-slate-500">
+            {ctaConfig.description}
+          </div>
         </aside>
       </section>
     </div>

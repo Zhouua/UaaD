@@ -7,6 +7,7 @@ import {
   PlusCircle,
   Search,
   Settings,
+  Ticket,
   User,
   UserCircle2,
 } from 'lucide-react';
@@ -118,6 +119,11 @@ export function PublicHeader({
         icon: Bell,
         label: t('dashboard.notifications'),
         path: '/app/notifications',
+      },
+      {
+        icon: Ticket,
+        label: t('orders.title'),
+        path: '/app/orders',
       },
       {
         icon: User,
@@ -254,7 +260,7 @@ export function PublicHeader({
         </form>
 
         <div className="flex shrink-0 items-center gap-2">
-          <LanguageToggle variant="light" />
+          <LanguageToggle variant="light" size="icon" />
           <div ref={notificationPanelRef} className="relative">
             <button
               type="button"
