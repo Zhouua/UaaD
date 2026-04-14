@@ -1,29 +1,35 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/uaad/backend/internal/config"
 	"github.com/uaad/backend/internal/domain"
 	"github.com/uaad/backend/internal/handler"
+	"github.com/uaad/backend/internal/infra"
 	"github.com/uaad/backend/internal/middleware"
 	"github.com/uaad/backend/internal/repository"
 	"github.com/uaad/backend/internal/service"
+	"github.com/uaad/backend/internal/worker"
 	"golang.org/x/time/rate"
-	"gorm.io/driver/sqlite"
+	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// ── Configuration ───────────────────────────────────────────────
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load("../.env")
+
 	cfg := config.Load()
 
-	// ── Database ────────────────────────────────────────────────────
-	db, err := gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
+	db, err := gorm.Open(gormmysql.Open(cfg.MySQLDSN()), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
@@ -32,19 +38,27 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get sql.DB: %v", err)
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	cfg.ApplyMySQLPool(sqlDB)
 
-	// Auto-migrate all known entities
 	if err := db.AutoMigrate(
 		&domain.User{},
 		&domain.Activity{},
 		&domain.Enrollment{},
 		&domain.Order{},
+		&domain.Notification{},
+		&domain.UserBehavior{},
+		&domain.ActivityScore{},
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
+
+	// ── Redis ──────────────────────────────────────────────────────
+	rdb := infra.NewRedisClient(cfg)
+	stockEngine := service.NewStockEngine(rdb)
+
+	// ── Kafka ─────────────────────────────────────────────────────
+	kafkaWriter := infra.NewKafkaWriter(cfg)
+	kafkaReader := infra.NewKafkaReader(cfg)
 
 	// ── Dependency Injection ────────────────────────────────────────
 	userRepo := repository.NewUserRepository(db)
@@ -54,28 +68,40 @@ func main() {
 	activityRepo := repository.NewActivityRepository(db)
 	enrollmentRepo := repository.NewEnrollmentRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
+	notifRepo := repository.NewNotificationRepository(db)
+	behaviorRepo := repository.NewBehaviorRepository(db)
+	recommendRepo := repository.NewRecommendationRepository(db)
 
-	activitySvc := service.NewActivityService(activityRepo)
-	enrollmentSvc := service.NewEnrollmentService(db, enrollmentRepo, activityRepo, orderRepo)
-	orderSvc := service.NewOrderService(orderRepo, activityRepo)
+	activitySvc := service.NewActivityService(activityRepo, stockEngine)
+	notifSvc := service.NewNotificationService(notifRepo)
+	enrollmentSvc := service.NewEnrollmentService(db, stockEngine, kafkaWriter, enrollmentRepo, activityRepo, orderRepo)
+	orderSvc := service.NewOrderService(orderRepo, activityRepo, stockEngine)
+	behaviorSvc := service.NewBehaviorService(behaviorRepo)
+	recommendSvc := service.NewRecommendationService(recommendRepo, cfg.Scoring, 5*time.Minute)
 
 	activityHandler := handler.NewActivityHandler(activitySvc)
 	enrollmentHandler := handler.NewEnrollmentHandler(enrollmentSvc)
 	orderHandler := handler.NewOrderHandler(orderSvc)
+	notifHandler := handler.NewNotificationHandler(notifSvc)
+	behaviorHandler := handler.NewBehaviorHandler(behaviorSvc, cfg)
+	recommendHandler := handler.NewRecommendationHandler(recommendSvc)
 
-	// Rate limiter: 5 registration requests per minute
 	regLimit := middleware.NewIPRateLimiter(rate.Limit(5.0/60.0), 5)
 
 	// ── Router ──────────────────────────────────────────────────────
 	r := gin.Default()
 
+	r.Use(middleware.PrometheusMiddleware())
 	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		MaxAge:           12 * time.Hour,
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:   []string{"Content-Length"},
+		MaxAge:          12 * time.Hour,
 	}))
+
+	// Prometheus metrics endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	v1 := r.Group("/api/v1")
 	{
@@ -85,22 +111,26 @@ func main() {
 			auth.POST("/login", authHandler.Login)
 		}
 
-		// Protected routes (require JWT authentication)
 		protected := v1.Group("", middleware.JWTAuth(cfg.JWTSecret))
 		{
 			protected.GET("/auth/profile", authHandler.GetCurrentUser)
 		}
 
-		// ── Module Routes ────────────────────────────────────���──
 		handler.RegisterActivityRoutes(v1, activityHandler, cfg.JWTSecret)
 		handler.RegisterEnrollmentRoutes(v1, enrollmentHandler, cfg.JWTSecret)
 		handler.RegisterOrderRoutes(v1, orderHandler, cfg.JWTSecret)
+		handler.RegisterNotificationRoutes(v1, notifHandler, cfg.JWTSecret)
+		handler.RegisterBehaviorRoutes(v1, behaviorHandler, cfg.JWTSecret)
+		handler.RegisterRecommendationRoutes(v1, recommendHandler, cfg.JWTSecret)
 	}
 
-	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+
+	// ── Enrollment Worker (Kafka consumer → MySQL) ───────────────────
+	enrollWorker := worker.NewEnrollmentWorker(kafkaReader, db, stockEngine, notifSvc, activityRepo)
+	go enrollWorker.Run(context.Background())
 
 	// ── Order Expiry Scanner (every 5 minutes) ─────────────────────────
 	go func() {
@@ -112,6 +142,25 @@ func main() {
 				log.Printf("[OrderExpiry] scan error: %v", err)
 			} else if closed > 0 {
 				log.Printf("[OrderExpiry] closed %d expired orders, stock rolled back", closed)
+			}
+		}
+	}()
+
+	// ── Recommendation Score Recalculation ──────────────────────────────
+	go func() {
+		if err := recommendSvc.RecalculateAllScores(context.Background()); err != nil {
+			log.Printf("[RecommendScore] initial recalc error: %v", err)
+		}
+
+		interval := time.Duration(cfg.ScoreRecalcIntervalMinutes) * time.Minute
+		if interval <= 0 {
+			interval = 30 * time.Minute
+		}
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := recommendSvc.RecalculateAllScores(context.Background()); err != nil {
+				log.Printf("[RecommendScore] periodic recalc error: %v", err)
 			}
 		}
 	}()
