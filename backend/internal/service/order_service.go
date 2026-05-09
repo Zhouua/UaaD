@@ -3,12 +3,24 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/uaad/backend/internal/domain"
 	"github.com/uaad/backend/internal/repository"
 )
+
+// resolveActivityTitle returns the activity's title, falling back to a
+// human-readable "活动 #<id>" when the activity row cannot be loaded — never
+// the literal string "unknown" (forbidden by SPRINT3 §三 task 1).
+func resolveActivityTitle(repo repository.ActivityRepository, activityID uint64) string {
+	if act, err := repo.FindByID(activityID); err == nil && act.Title != "" {
+		return act.Title
+	}
+	log.Printf("[notification] activity title lookup failed, using id fallback: activity=%d", activityID)
+	return fmt.Sprintf("活动 #%d", activityID)
+}
 
 var (
 	ErrOrderNotFound   = errors.New("order not found")
@@ -128,10 +140,7 @@ func (s *orderService) ScanExpired() (int, error) {
 				order.ID, order.ActivityID, order.UserID, err)
 		}
 		if s.notifSvc != nil {
-			activityTitle := "unknown"
-			if act, e := s.activityRepo.FindByID(order.ActivityID); e == nil {
-				activityTitle = act.Title
-			}
+			activityTitle := resolveActivityTitle(s.activityRepo, order.ActivityID)
 			s.notifSvc.NotifyOrderExpire(order.UserID, order.ID, activityTitle)
 		}
 		closed++

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -122,15 +123,20 @@ func (w *EnrollmentWorker) handleMessage(ctx context.Context, msg kafka.Message)
 	})
 
 	if err != nil {
-		activityTitle := "unknown"
-		if act, e := w.activityRepo.FindByID(em.ActivityID); e == nil {
-			activityTitle = act.Title
-		}
-		log.Printf("[EnrollWorker] MySQL tx failed for user=%d activity=%d: %v — rolling back Redis", em.UserID, em.ActivityID, err)
+		activityTitle := resolveWorkerActivityTitle(w.activityRepo, em.ActivityID)
+		log.Printf("[EnrollWorker] MySQL tx failed for enrollment=%d user=%d activity=%d: %v — rolling back Redis", em.EnrollmentID, em.UserID, em.ActivityID, err)
 		if rbErr := w.stockEngine.Rollback(ctx, em.ActivityID, em.UserID); rbErr != nil {
 			log.Printf("[EnrollWorker] CRITICAL: Redis rollback also failed: %v", rbErr)
 		}
-		w.notifSvc.NotifyEnrollFail(em.UserID, 0, activityTitle)
+		// Mark enrollment FAILED so it stops being treated as in-flight.
+		// Best-effort: if this update fails the row stays QUEUING and a future
+		// reconciler must clean it up; we still notify the user.
+		if updErr := w.db.Model(&domain.Enrollment{}).
+			Where("id = ? AND status = ?", em.EnrollmentID, "QUEUING").
+			Update("status", "FAILED").Error; updErr != nil {
+			log.Printf("[EnrollWorker] failed to mark enrollment=%d FAILED: %v", em.EnrollmentID, updErr)
+		}
+		w.notifSvc.NotifyEnrollFail(em.UserID, em.EnrollmentID, activityTitle)
 		middleware.RecordWorkerMessage("failure", time.Since(start).Seconds())
 		return
 	}
@@ -140,10 +146,19 @@ func (w *EnrollmentWorker) handleMessage(ctx context.Context, msg kafka.Message)
 		return
 	}
 
-	activityTitle := "unknown"
-	if act, e := w.activityRepo.FindByID(em.ActivityID); e == nil {
-		activityTitle = act.Title
-	}
+	activityTitle := resolveWorkerActivityTitle(w.activityRepo, em.ActivityID)
 	w.notifSvc.NotifyEnrollSuccess(em.UserID, em.EnrollmentID, activityTitle)
 	middleware.RecordWorkerMessage("success", time.Since(start).Seconds())
+}
+
+// resolveWorkerActivityTitle returns the activity's title or a "活动 #<id>"
+// fallback. Never returns the literal "unknown" (forbidden by SPRINT3 §三 task 1).
+func resolveWorkerActivityTitle(repo interface {
+	FindByID(id uint64) (*domain.Activity, error)
+}, activityID uint64) string {
+	if act, err := repo.FindByID(activityID); err == nil && act.Title != "" {
+		return act.Title
+	}
+	log.Printf("[EnrollWorker] activity title lookup failed, using id fallback: activity=%d", activityID)
+	return fmt.Sprintf("活动 #%d", activityID)
 }
