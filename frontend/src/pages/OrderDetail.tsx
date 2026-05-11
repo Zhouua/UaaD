@@ -186,7 +186,8 @@ export default function OrderDetailPage() {
     );
   }
 
-  const canPay = order.status === 'PENDING' && !countdown.expired;
+  const canCancel = order.status === 'PENDING';
+  const canPay = canCancel && !countdown.expired;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12">
@@ -310,17 +311,19 @@ export default function OrderDetailPage() {
             )}
           </div>
 
-          {canPay ? (
+          {canCancel ? (
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={handlePay}
-                disabled={paying || cancelling}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {paying ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                {paying ? t('orders.paying') : t('orders.payNow')}
-              </button>
+              {canPay ? (
+                <button
+                  type="button"
+                  onClick={handlePay}
+                  disabled={paying || cancelling}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {paying ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                  {paying ? t('orders.paying') : t('orders.payNow')}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void handleCancelPending()}

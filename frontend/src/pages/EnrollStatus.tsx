@@ -231,6 +231,18 @@ export default function EnrollStatusPage() {
               </Link>
             </div>
           </div>
+        ) : status.status === 'CANCELLED' ? (
+          <div className="text-center">
+            <XCircle className="mx-auto text-rose-400" size={34} />
+            <h3 className="mt-4 text-2xl font-black text-slate-900">{t('enrollStatus.cancelledTitle')}</h3>
+            <p className="mt-3 text-sm leading-7 text-slate-500">{t('enrollStatus.cancelledDescription')}</p>
+            <Link
+              to="/activities"
+              className="mt-6 inline-flex rounded-full bg-rose-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-600"
+            >
+              {t('orders.browseActivities')}
+            </Link>
+          </div>
         ) : (
           <div className="text-center">
             <TicketX className="mx-auto text-rose-300" size={32} />

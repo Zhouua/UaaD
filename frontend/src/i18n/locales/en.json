@@ -356,6 +356,8 @@
     "cancelConfirm": "Cancel this queued enrollment? The spot will be released.",
     "cancelSuccess": "Queue cancelled and the spot has been released.",
     "cancelError": "Unable to cancel right now. Please try again.",
+    "cancelledTitle": "Enrollment cancelled",
+    "cancelledDescription": "This enrollment has been cancelled, and the reserved spot has been released.",
     "successTitle": "Enrollment confirmed",
     "successDescription": "Your order is ready, and you can continue to payment now.",
     "failedTitle": "Enrollment incomplete",
